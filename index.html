@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Battle Royale Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            background: lightblue; /* Sky */
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        interface Player {
+            x: number;
+            y: number;
+            health: number;
+            shield: number;
+            gun: string | null; // Gun is null if player has no gun
+        }
+
+        class Game {
+            private canvas: HTMLCanvasElement;
+            private ctx: CanvasRenderingContext2D;
+            private players: Player[] = [];
+            private playerIndex: number = 0;
+            private stormRadius: number = 200;
+
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
+                this.ctx = this.canvas.getContext('2d')!;
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+
+                this.players.push(this.createPlayer());
+                this.spawnBots(99);
+                this.addEventListeners();
+                this.gameLoop();
+            }
+
+            private createPlayer(): Player {
+                return {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    health: 100,
+                    shield: 100,
+                    gun: null,
+                };
+            }
+
+            private spawnBots(count: number) {
+                for (let i = 0; i < count; i++) {
+                    this.players.push(this.createPlayer());
+                }
+            }
+
+            private addEventListeners() {
+                document.addEventListener('keydown', (e) => {
+                    switch (e.key) {
+                        case 'w': this.players[this.playerIndex].y -= 5; break; // Move up
+                        case 's': this.players[this.playerIndex].y += 5; break; // Move down
+                        case 'a': this.players[this.playerIndex].x -= 5; break; // Move left
+                        case 'd': this.players[this.playerIndex].x += 5; break; // Move right
+                        case ' ': this.players[this.playerIndex].gun = 'Pistol'; break; // Pick up gun (simulated)
+                    }
+                    this.players[this.playerIndex].x = Math.max(0, Math.min(this.canvas.width, this.players[this.playerIndex].x));
+                    this.players[this.playerIndex].y = Math.max(0, Math.min(this.canvas.height, this.players[this.playerIndex].y));
+                });
+            }
+
+            private drawPlayer(player: Player, index: number) {
+                this.ctx.fillStyle = index === this.playerIndex ? 'green' : 'red';
+                this.ctx.fillRect(player.x, player.y, 20, 20);
+            }
+
+            private draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.players.forEach((player, index) => this.drawPlayer(player, index));
+                // Draw storm
+                this.ctx.strokeStyle = 'blue';
+                this.ctx.beginPath();
+                this.ctx.arc(this.canvas.width / 2, this.canvas.height / 2, this.stormRadius, 0, Math.PI * 2);
+                this.ctx.stroke();
+            }
+
+            private gameLoop() {
+                this.draw();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        window.onload = () => {
+            new Game();
+        };
+    </script>
+</body>
+</html>

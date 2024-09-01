@@ -14,9 +14,18 @@
             background: lightblue; /* Sky */
             display: block;
         }
+
+        .map {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
+    <div class="map">Use W, A, S, D to move and SPACE to pick up a gun!</div>
     <canvas id="gameCanvas"></canvas>
     <script>
         interface Player {
@@ -41,15 +50,15 @@
                 this.canvas.height = window.innerHeight;
 
                 this.players.push(this.createPlayer());
-                this.spawnBots(99);
+                this.spawnBots(4); // Change 99 to 4 for better visibility
                 this.addEventListeners();
                 this.gameLoop();
             }
 
             private createPlayer(): Player {
                 return {
-                    x: Math.random() * this.canvas.width,
-                    y: Math.random() * this.canvas.height,
+                    x: this.canvas.width / 2,
+                    y: this.canvas.height / 2,
                     health: 100,
                     shield: 100,
                     gun: null,
@@ -71,18 +80,37 @@
                         case 'd': this.players[this.playerIndex].x += 5; break; // Move right
                         case ' ': this.players[this.playerIndex].gun = 'Pistol'; break; // Pick up gun (simulated)
                     }
-                    this.players[this.playerIndex].x = Math.max(0, Math.min(this.canvas.width, this.players[this.playerIndex].x));
-                    this.players[this.playerIndex].y = Math.max(0, Math.min(this.canvas.height, this.players[this.playerIndex].y));
+                    this.players[this.playerIndex].x = Math.max(20, Math.min(this.canvas.width - 20, this.players[this.playerIndex].x));
+                    this.players[this.playerIndex].y = Math.max(20, Math.min(this.canvas.height - 20, this.players[this.playerIndex].y));
                 });
             }
 
             private drawPlayer(player: Player, index: number) {
                 this.ctx.fillStyle = index === this.playerIndex ? 'green' : 'red';
-                this.ctx.fillRect(player.x, player.y, 20, 20);
+                // Draw player character
+                this.ctx.fillRect(player.x - 10, player.y - 10, 20, 20);
+            }
+
+            private drawPlane() {
+                this.ctx.fillStyle = 'brown';
+                // Draw a simple plane
+                this.ctx.fillRect(this.canvas.width / 2 - 50, 50, 100, 20); // Plane body
+                this.ctx.fillStyle = 'lightgray';
+                this.ctx.fillRect(this.canvas.width / 2 - 70, 30, 20, 20); // Left wing
+                this.ctx.fillRect(this.canvas.width / 2 + 50, 30, 20, 20); // Right wing
+            }
+
+            private drawMap() {
+                this.ctx.fillStyle = 'green';
+                this.ctx.fillRect(0, this.canvas.height - 100, this.canvas.width, 100); // Ground
+                this.ctx.fillStyle = 'sandybrown';
+                this.ctx.fillRect((this.canvas.width - 300) / 2, (this.canvas.height - 300), 300, 300); // Map area
             }
 
             private draw() {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawMap();
+                this.drawPlane();
                 this.players.forEach((player, index) => this.drawPlayer(player, index));
                 // Draw storm
                 this.ctx.strokeStyle = 'blue';

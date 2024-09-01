@@ -21,6 +21,7 @@
             left: 10px;
             color: white;
             font-size: 20px;
+            z-index: 1;
         }
     </style>
 </head>
@@ -41,18 +42,22 @@
             private ctx: CanvasRenderingContext2D;
             private players: Player[] = [];
             private playerIndex: number = 0;
-            private stormRadius: number = 200;
 
             constructor() {
                 this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
                 this.ctx = this.canvas.getContext('2d')!;
-                this.canvas.width = window.innerWidth;
-                this.canvas.height = window.innerHeight;
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
 
                 this.players.push(this.createPlayer());
                 this.spawnBots(4); // Change 99 to 4 for better visibility
                 this.addEventListeners();
                 this.gameLoop();
+            }
+
+            private resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
             }
 
             private createPlayer(): Player {
@@ -67,21 +72,29 @@
 
             private spawnBots(count: number) {
                 for (let i = 0; i < count; i++) {
-                    this.players.push(this.createPlayer());
+                    this.players.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        health: 100,
+                        shield: 100,
+                        gun: null,
+                    });
                 }
             }
 
             private addEventListeners() {
                 document.addEventListener('keydown', (e) => {
+                    const player = this.players[this.playerIndex];
                     switch (e.key) {
-                        case 'w': this.players[this.playerIndex].y -= 5; break; // Move up
-                        case 's': this.players[this.playerIndex].y += 5; break; // Move down
-                        case 'a': this.players[this.playerIndex].x -= 5; break; // Move left
-                        case 'd': this.players[this.playerIndex].x += 5; break; // Move right
-                        case ' ': this.players[this.playerIndex].gun = 'Pistol'; break; // Pick up gun (simulated)
+                        case 'w': player.y -= 5; break; // Move up
+                        case 's': player.y += 5; break; // Move down
+                        case 'a': player.x -= 5; break; // Move left
+                        case 'd': player.x += 5; break; // Move right
+                        case ' ': player.gun = 'Pistol'; break; // Pick up gun (simulated)
                     }
-                    this.players[this.playerIndex].x = Math.max(20, Math.min(this.canvas.width - 20, this.players[this.playerIndex].x));
-                    this.players[this.playerIndex].y = Math.max(20, Math.min(this.canvas.height - 20, this.players[this.playerIndex].y));
+                    // Keep player within the canvas bounds
+                    player.x = Math.max(20, Math.min(this.canvas.width - 20, player.x));
+                    player.y = Math.max(20, Math.min(this.canvas.height - 20, player.y));
                 });
             }
 
@@ -94,17 +107,19 @@
             private drawPlane() {
                 this.ctx.fillStyle = 'brown';
                 // Draw a simple plane
-                this.ctx.fillRect(this.canvas.width / 2 - 50, 50, 100, 20); // Plane body
+                this.ctx.fillRect((this.canvas.width - 100) / 2, 50, 100, 20); // Plane body
                 this.ctx.fillStyle = 'lightgray';
-                this.ctx.fillRect(this.canvas.width / 2 - 70, 30, 20, 20); // Left wing
-                this.ctx.fillRect(this.canvas.width / 2 + 50, 30, 20, 20); // Right wing
+                this.ctx.fillRect((this.canvas.width - 140) / 2, 30, 20, 20); // Left wing
+                this.ctx.fillRect((this.canvas.width + 20) / 2, 30, 20, 20); // Right wing
             }
 
             private drawMap() {
                 this.ctx.fillStyle = 'green';
                 this.ctx.fillRect(0, this.canvas.height - 100, this.canvas.width, 100); // Ground
                 this.ctx.fillStyle = 'sandybrown';
-                this.ctx.fillRect((this.canvas.width - 300) / 2, (this.canvas.height - 300), 300, 300); // Map area
+                const mapX = (this.canvas.width - 400) / 2;
+                const mapY = (this.canvas.height - 400) / 2;
+                this.ctx.fillRect(mapX, mapY, 400, 400); // Map area
             }
 
             private draw() {
@@ -112,10 +127,11 @@
                 this.drawMap();
                 this.drawPlane();
                 this.players.forEach((player, index) => this.drawPlayer(player, index));
-                // Draw storm
+                
+                // Optional: Draw storm
                 this.ctx.strokeStyle = 'blue';
                 this.ctx.beginPath();
-                this.ctx.arc(this.canvas.width / 2, this.canvas.height / 2, this.stormRadius, 0, Math.PI * 2);
+                this.ctx.arc(this.canvas.width / 2, this.canvas.height / 2, 200, 0, Math.PI * 2);
                 this.ctx.stroke();
             }
 
